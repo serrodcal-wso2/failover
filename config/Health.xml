@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<api context="/health" name="Health" xmlns="http://ws.apache.org/ns/synapse">
+    <resource methods="GET" uri-template="/hospital/{hospitalId}">
+        <inSequence>
+            <log>
+                <property name="**** [API]" value="IN - /hospital/{hospitalId}"/>
+            </log>
+            <log category="DEBUG">
+                <property expression="get-property('uri.var.hospitalId')" name="hospitalId"/>
+            </log>
+            <send>
+                <endpoint name="SampleFailover">
+                    <failover>
+                        <endpoint name="Blue">
+                            <http method="get" uri-template="http://hospital-blue:8080/hospital/{uri.var.hospitalId}">
+                                <suspendOnFailure>
+                                    <!-- initialDuration: Once the endpoint reach to 'suspended' state ( 'open' state  in Circuit Breaker pattern), it waits for 5000 ms to perform next retry.-->
+                                    <initialDuration>5000</initialDuration> 
+                                </suspendOnFailure>
+                                <markForSuspension>
+                                    <errorCodes>101507,101508,101505,101506,101509,101500,101510,101001,101000,101503,101504,101501</errorCodes>
+                                    <!-- retriesBeforeSuspension: This is the failure count to move endpoint into 'Suspended' ( 'open' state  in Circuit Breaker pattern) state.  -->
+                                    <retriesBeforeSuspension>0</retriesBeforeSuspension>
+                                    <!-- retryDelay: This is the delay in between failure calls. -->
+                                    <retryDelay>1000</retryDelay>
+                                </markForSuspension>
+                                <timeout>
+                                    <duration>200</duration>
+                                    <responseAction>fault</responseAction>
+                                </timeout>
+                            </http>
+                        </endpoint>
+                        <endpoint name="Green">
+                            <http method="get" uri-template="http://hospital-green:8081/hospital/{uri.var.hospitalId}">
+                                <suspendOnFailure>
+                                    <!-- initialDuration: Once the endpoint reach to 'suspended' state ( 'open' state  in Circuit Breaker pattern), it waits for 5000 ms to perform next retry.-->
+                                    <initialDuration>5000</initialDuration>
+                                </suspendOnFailure>
+                                <markForSuspension>
+                                    <errorCodes>101507,101508,101505,101506,101509,101500,101510,101001,101000,101503,101504,101501</errorCodes>
+                                    <!-- retriesBeforeSuspension: This is the failure count to move endpoint into 'Suspended' ( 'open' state  in Circuit Breaker pattern) state.  -->
+                                    <retriesBeforeSuspension>0</retriesBeforeSuspension>
+                                    <!-- retryDelay: This is the delay in between failure calls. -->
+                                    <retryDelay>1000</retryDelay>
+                                 </markForSuspension>
+                                 <timeout>
+                                    <duration>200</duration>
+                                    <responseAction>fault</responseAction>
+                                </timeout>
+                                <retryConfig>
+                                    <disabledErrorCodes>101507,101503</disabledErrorCodes>
+                                </retryConfig>
+                            </http>
+                        </endpoint>
+                    </failover>
+                </endpoint>
+            </send>     
+        </inSequence>
+        <outSequence>
+            <log category="DEBUG">
+                <property expression="json-eval($.)" name="hospital_response"/>
+            </log>
+            <log>
+                <property name="**** [API]" value="OUT - /hospital/{hospitalId}"/>
+            </log>
+            <send/>
+        </outSequence>
+        <faultSequence/>
+    </resource>
+</api>

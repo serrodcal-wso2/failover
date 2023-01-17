@@ -1,0 +1,40 @@
+version: '3.9'
+
+networks:
+  local:
+
+services:
+
+  # Quarkus application
+  hospital-blue:
+    container_name: "hospital-blue"
+    image: serrodcal/hospital:1.0.0-native-distroless
+    ports: 
+      - "8080:8080"
+    networks:
+      - local
+
+  # Quarkus application
+  hospital-green:
+    container_name: "hospital-green"
+    image: serrodcal/hospital:1.0.0-native-distroless
+    environment:
+      - QUARKUS_HTTP_PORT=8081
+    ports: 
+      - "8081:8081"
+    networks:
+      - local
+
+  mi:
+    container_name: "mi"
+    image: wso2/wso2mi:4.1.0
+    volumes:
+      - ./config/Health.xml:/home/wso2carbon/wso2mi-4.1.0/repository/deployment/server/synapse-configs/default/api/Health.xml
+    ports: 
+      - "8290:8290" # HTTP
+      - "8253:8253" # HTTPS
+    networks:
+      - local
+    depends_on:
+      - hospital-blue
+      - hospital-green
